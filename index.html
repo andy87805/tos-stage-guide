@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ebebed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="敵技攻略">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>關卡敵技攻略</title>
+<style>
+:root{
+  --bg:#ebebed; --card:#fff; --ink:#0c0c0d; --accent:#2bd96b;
+  --mute:rgba(12,12,13,.5); --line:rgba(12,12,13,.09); --soft:rgba(12,12,13,.055);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --bounce:cubic-bezier(.3,1.35,.5,1);
+  --smooth:cubic-bezier(.22,1,.36,1);
+  --a-水:#3d9bff; --a-火:#ff5b4a; --a-木:#2bd96b; --a-光:#f2b705; --a-暗:#9a5cf0;
+}
+@supports (transition-timing-function:linear(0,1)){
+  :root{--spring:linear(0,.009,.035 2.1%,.141 4.4%,.723 12.9%,.938 16.7%,1.017,1.077,1.121,1.149 24.3%,1.159,1.163,1.161,1.154 29.9%,1.129 32.8%,1.051 39.6%,1.017 43.1%,.991,.977 51%,.974 53.8%,.975 57.1%,.997 69.8%,1.003 76.9%,1.004 83.8%,1)}
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{font:500 14px/1.45 "Inter","SF Pro Text","Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;padding:calc(28px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(56px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left))}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.page{max-width:1240px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 6px 22px}
+h1{font-size:22px;font-weight:700;letter-spacing:-.01em}
+header p{color:var(--mute);font-size:13px;margin-top:2px}
+.dd{position:relative;width:300px;max-width:100%;flex:none;z-index:20}
+.dd-btn{width:100%;height:52px;border-radius:18px;background:var(--card);display:flex;align-items:center;gap:10px;padding:0 14px 0 8px;font-weight:700;box-shadow:inset 0 0 0 1.5px transparent;transition:box-shadow .3s,transform .4s var(--spring)}
+.dd-btn:active{transform:scale(.97)}
+.dd.open .dd-btn{box-shadow:inset 0 0 0 2px var(--ink)}
+.dd-btn .art,.dd-menu .art{width:36px;border-radius:11px}
+.dd-btn span.t{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.dd-btn small,.dd-menu small{display:block;font-size:11px;font-weight:500;color:var(--mute)}
+.chev{margin-left:auto;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;transition:transform .6s var(--spring)}
+.dd.open .chev{transform:rotate(180deg)}
+.dd-menu{position:absolute;left:0;right:0;top:60px;max-height:min(70vh,520px);overflow:auto;background:#fff;border-radius:20px;padding:6px;box-shadow:0 14px 34px rgba(0,0,0,.13),0 0 0 1px var(--line);transform-origin:50% 0;transform:scale(.9) translateY(-10px);opacity:0;visibility:hidden;transition:transform .55s var(--spring),opacity .22s,visibility 0s .22s}
+.dd.open .dd-menu{transform:none;opacity:1;visibility:visible;transition-delay:0s}
+.dd-menu button{width:100%;min-height:48px;border-radius:14px;display:flex;align-items:center;gap:10px;padding:6px 10px 6px 6px;font-size:13px;font-weight:600;line-height:1.25;transition:background .2s}
+.dd-menu button:hover{background:var(--soft)}
+.dd-menu button.sel{background:var(--accent)}
+.dd-menu button.sel small{color:rgba(12,12,13,.6)}
+.dd-menu button span{min-width:0}
+
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.card{background:var(--card);border-radius:28px;padding:20px;position:relative;min-width:0;display:flex;flex-direction:column;animation:rise .9s var(--bounce) both;animation-delay:calc(var(--i,0)*60ms)}
+@keyframes rise{from{opacity:0;transform:translateY(26px) scale(.96)}}
+.lbl{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.04em;margin-bottom:12px;min-height:16px}
+.lbl b{color:var(--ink);font-weight:600;letter-spacing:0}
+.num{font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--accent);border-radius:99px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.chip.k{background:var(--ink);color:#fff}
+.chip.s{background:var(--soft)}
+.out{opacity:0!important;transform:translateY(8px)!important}
+
+.roll{display:inline-flex;line-height:1;font-variant-numeric:tabular-nums}
+.roll .dg{height:1em;overflow:hidden;display:inline-block}
+.roll .st{display:flex;flex-direction:column;transition:transform .85s var(--bounce)}
+.roll .st i{height:1em;line-height:1;font-style:normal;display:block}
+
+/* hero */
+.hero{grid-column:span 2;flex-direction:row;gap:18px;align-items:stretch}
+.hero-art{width:148px;flex:none;border-radius:22px;overflow:hidden;background:var(--ink);align-self:flex-start;aspect-ratio:1}
+.hero-art img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-b{display:flex;flex-direction:column;min-width:0;flex:1}
+.hero h2{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.hero h2 small{display:block;font-size:13px;font-weight:600;color:var(--mute);letter-spacing:0;margin-top:3px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.ach{list-style:none;margin-top:auto;display:flex;flex-direction:column;gap:5px;font-size:13px}
+.ach li{display:flex;gap:8px;align-items:flex-start}
+.ach li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:7px;flex:none}
+
+/* ring */
+.ring{position:relative;margin:auto;width:128px;height:128px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:11;stroke:var(--soft)}
+.ring circle.v{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:326.7;stroke-dashoffset:326.7;transition:stroke-dashoffset 1.3s var(--bounce)}
+.ring div{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring strong{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.ring strong sup{font-size:13px;margin-left:1px}
+.ring small{color:var(--mute);font-size:11px}
+
+/* bag */
+.bag-n{display:flex;align-items:baseline;gap:8px}
+.bag-n .roll{font-size:34px;font-weight:700;letter-spacing:-.02em}
+.bag-n span:last-child{color:var(--mute);font-size:13px}
+.tg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;margin-top:auto;cursor:pointer}
+.tg-row small{display:block;color:var(--mute);font-size:11px}
+.tg-row input{position:absolute;opacity:0;width:1px;height:1px}
+.sw{width:48px;height:28px;border-radius:14px;background:rgba(12,12,13,.14);position:relative;transition:background .35s;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:11px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .6s var(--spring)}
+input:checked+.sw{background:var(--accent)}
+input:checked+.sw::after{transform:translateX(20px)}
+input:focus-visible+.sw{outline:2px solid var(--ink);outline-offset:2px}
+input:disabled+.sw{opacity:.45}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 18px;border-radius:15px;background:var(--ink);color:#fff;font-weight:700;cursor:pointer;transition:transform .45s var(--spring),background .3s}
+.btn:active{transform:scale(.96)}
+.btn.s{background:var(--soft);color:var(--ink)}
+.btn.s:hover{background:rgba(12,12,13,.1)}
+dialog{border:0;border-radius:28px;padding:24px;width:min(480px,calc(100vw - 32px));margin:auto;color:var(--ink);font:inherit;box-shadow:0 24px 60px rgba(0,0,0,.22)}
+dialog[open]{animation:rise .6s var(--bounce) both}
+dialog::backdrop{background:rgba(12,12,13,.35)}
+dialog h3{font-size:19px;font-weight:700}
+dialog p{color:var(--mute);font-size:13px;margin:6px 0 14px}
+dialog textarea{width:100%;border:0;border-radius:16px;background:var(--soft);padding:12px 14px;font:500 14px/1.5 ui-monospace,Consolas,monospace;color:var(--ink);resize:vertical;outline:1.5px solid transparent;transition:outline-color .3s,background .3s}
+dialog textarea:focus{outline-color:var(--ink);background:#fff}
+.dlg-r{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;color:var(--mute)}
+.dlg-r.end{justify-content:flex-end;margin-top:20px}
+.more{margin-top:10px;width:100%}
+
+/* best cards */
+.best{grid-column:1/-1}
+.best-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.bc{display:flex;gap:12px;padding:10px;border-radius:20px;box-shadow:inset 0 0 0 1.5px var(--line);transition:box-shadow .3s,background .3s,transform .45s var(--spring);min-width:0;width:100%}
+.bc:hover{background:var(--soft);box-shadow:inset 0 0 0 2px var(--ink)}
+.bc:active{transform:scale(.97)}
+.art{position:relative;flex:none;border-radius:16px;overflow:hidden;background:var(--soft);aspect-ratio:1}
+.art img{width:100%;height:100%;object-fit:cover;display:block}
+.art::after{content:"";position:absolute;left:6px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--a,transparent);box-shadow:0 0 0 2px #fff}
+.art.na::after{display:none}
+.bc .art{width:76px}
+.bc-b{min-width:0;display:flex;flex-direction:column;gap:5px;flex:1}
+.bc-b strong{font-size:13px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bc-b small{color:var(--mute);font-size:11px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* floors */
+.work{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px;margin-top:16px;align-items:start}
+.seg{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));background:var(--soft);border-radius:14px;padding:4px}
+.seg button{position:relative;z-index:1;text-align:center;padding:8px 0;font-size:13px;font-weight:600;color:var(--mute);transition:color .3s}
+.seg button.on{color:var(--ink)}
+.seg-pill{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/var(--n));border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .7s var(--spring)}
+.enemies{display:flex;flex-direction:column;gap:14px;margin-top:16px;transition:opacity .25s,transform .5s var(--bounce)}
+.en-h{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.en-h .art{width:48px;border-radius:14px}
+.en-h strong{display:block;font-weight:700;line-height:1.25}
+.en-h small{color:var(--mute);font-size:12px}
+.en-h .chip{margin-left:auto}
+.es{display:flex;flex-direction:column;gap:6px}
+.es button{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:7px 12px 7px 8px;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--line);transition:box-shadow .3s,background .3s,transform .45s var(--spring)}
+.es button:hover{background:var(--soft)}
+.es button:active{transform:scale(.97)}
+.es button.on{box-shadow:inset 0 0 0 2px var(--ink);background:var(--soft)}
+.es-i{width:32px;height:32px;border-radius:10px;background:var(--ink);flex:none;display:grid;place-items:center;overflow:hidden}
+.es-i img{width:26px;height:26px;object-fit:contain}
+.es span{font-weight:600;font-size:13px;line-height:1.25;min-width:0}
+.es em{margin-left:auto;font-style:normal;font-size:12px;font-weight:700;white-space:nowrap;color:var(--mute)}
+.es em.has{color:var(--ink);background:var(--accent);border-radius:99px;padding:3px 9px}
+
+/* detail */
+.detail{position:sticky;top:16px}
+.d-in{transition:opacity .25s,transform .5s var(--bounce)}
+.d-h{display:flex;align-items:center;gap:12px}
+.d-h .es-i{width:44px;height:44px;border-radius:14px}
+.d-h .es-i img{width:34px;height:34px}
+.d-h strong{font-size:19px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
+.d-h small{display:block;color:var(--mute);font-size:12px}
+.d-eff{white-space:pre-line;font-size:13px;color:var(--mute);margin:14px 0 0}
+.note{display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:10px 12px;border-radius:14px;background:var(--soft);font-size:13px}
+.note i{width:6px;align-self:stretch;min-height:22px;border-radius:3px;background:var(--accent);flex:none}
+.note small{display:block;color:var(--mute);font-size:11px}
+.recs-h{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px;font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.04em}
+.recs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.rc{display:flex;gap:12px;padding:10px;border-radius:20px;background:var(--soft);min-width:0;opacity:0;transform:translateY(12px) scale(.96);transition:opacity .25s,transform .55s var(--spring)}
+.rc.in{opacity:1;transform:none}
+.rc .art{width:72px;align-self:flex-start}
+.rc-b{min-width:0;flex:1}
+.rc-t{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
+.rc-b strong{display:block;font-size:13px;font-weight:700;line-height:1.25}
+.rc-b p{font-size:11px;color:var(--mute);line-height:1.4;margin-top:4px;overflow-wrap:anywhere}
+.rc-b p b{color:var(--ink);font-weight:600}
+.empty{padding:22px 16px;border-radius:20px;box-shadow:inset 0 0 0 1.5px var(--line);font-size:13px;color:var(--mute);text-align:center}
+.empty strong{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+footer{color:var(--mute);font-size:12px;padding:20px 6px 0;line-height:1.6}
+
+@media(max-width:1080px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .best-g{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .work{grid-template-columns:minmax(0,1fr)}
+  .detail{position:static}
+}
+.back{display:none;margin-bottom:14px;height:40px}
+.dd-menu h4{font-size:11px;font-weight:600;color:var(--mute);letter-spacing:.04em;padding:10px 10px 4px}
+@media(max-width:1080px){.back{display:inline-flex}.work>.card{scroll-margin-top:calc(12px + env(safe-area-inset-top))}}
+@media(max-width:600px){
+  body{padding:calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+  .card{border-radius:24px;padding:16px}
+  .seg button{padding:12px 0}
+  .es button{min-height:52px}
+  .hero h2{font-size:21px}
+  .dd-menu{max-height:62vh}
+  dialog textarea{font-size:16px}
+  .grid,.best-g,.recs{grid-template-columns:minmax(0,1fr)}
+  .hero{grid-column:auto;flex-direction:column}
+  .hero-art{width:96px}
+  header{flex-direction:column;align-items:stretch}
+  .dd{width:100%}
+  header p{display:none}
+  .seg button{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div><h1>關卡敵技攻略</h1><p>自動整理每層敵技並比對能處理的卡 · 資料來自神魔之塔繁中維基</p></div>
+  <div class="dd" id="dd">
+    <button class="dd-btn" aria-haspopup="listbox" aria-expanded="false"><span class="t"></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="dd-menu" role="listbox"></div>
+  </div>
+</header>
+
+<main>
+<div class="grid">
+  <section class="card hero" style="--i:0">
+    <div class="hero-art"><img id="boss" alt=""></div>
+    <div class="hero-b">
+      <div class="lbl"><span id="kind"></span><b id="open"></b></div>
+      <h2 id="sname"></h2>
+      <div class="meta" id="meta"></div>
+      <ul class="ach" id="ach"></ul>
+    </div>
+  </section>
+
+  <section class="card" style="--i:1">
+    <div class="lbl">敵技可解比例<b class="num" id="covN"></b></div>
+    <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52"/><circle class="v" cx="60" cy="60" r="52"/></svg>
+      <div><strong><span class="num" id="covP">0</span><sup>%</sup></strong><small>有卡可無視或解除</small></div></div>
+  </section>
+
+  <section class="card bag" style="--i:2">
+    <div class="lbl">我的背包<b id="bagSt"></b></div>
+    <div class="bag-n"><span class="roll" id="bagN"></span><span>張卡</span></div>
+    <label class="tg-row"><span>只推薦我有的卡<small id="bagHint"></small></span><input type="checkbox" id="bagOnly"><i class="sw"></i></label>
+    <button class="btn" id="bagOpen">匯入背包</button>
+  </section>
+
+  <section class="card best" style="--i:3">
+    <div class="lbl">一卡多解<b id="bestL"></b></div>
+    <div class="best-g" id="best"></div>
+  </section>
+</div>
+
+<div class="work">
+  <section class="card" style="--i:4">
+    <div class="lbl">各層敵技<b id="flbl"></b></div>
+    <div class="seg" id="seg"><i class="seg-pill"></i></div>
+    <div class="enemies" id="enemies"></div>
+  </section>
+
+  <section class="card detail" style="--i:5">
+    <button class="btn s back" id="back">↑ 回到各層敵技</button>
+    <div class="lbl">推薦卡片<b id="dcat"></b></div>
+    <div class="d-in" id="detail"></div>
+  </section>
+</div>
+</main>
+
+<footer>推薦依卡片技能文字自動比對，只代表「能處理這個敵技」，不代表能通關；種族、屬性等生效條件請看每張卡的說明。卡片索引範圍為編號 9300 之後（<span id="idxN"></span>），新卡若維基尚未補上技能則不會出現。背包只存在這個瀏覽器裡，不會上傳。<br>資料更新於 <span id="upd"></span>（台灣時間），每天自動從神魔之塔繁中維基同步本期關卡。</footer>
+</div>
+
+<dialog id="bagDlg" aria-labelledby="bagT">
+  <form method="dialog">
+    <h3 id="bagT">匯入背包</h3>
+    <p>貼上你擁有的卡片編號，用逗號、空白或換行分隔都可以；也能直接選擇 TXT、CSV 或 JSON 檔。進化前後算不同編號，請填目前持有的那一張。</p>
+    <textarea id="bagTxt" rows="7" placeholder="例如：11096, 11277, 10993" spellcheck="false"></textarea>
+    <div class="dlg-r"><label class="btn s">選擇檔案<input type="file" id="bagFile" accept=".txt,.csv,.json,text/plain,application/json" hidden></label><span id="bagPrev"></span></div>
+    <div class="dlg-r end"><button type="button" class="btn s" id="bagClear">清空</button><button class="btn s" value="cancel">取消</button><button type="button" class="btn" id="bagSave">儲存</button></div>
+  </form>
+</dialog>
+
+<script src="data.js"></script>
+<script>
+const D=window.DATA,$=(s,e=document)=>e.querySelector(s),$$=(s,e=document)=>[...e.querySelectorAll(s)];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const img=id=>`img/c${id}.png`;
+const art=(id,attr,name)=>`<span class="art${attr?'':' na'}" style="--a:var(--a-${attr||'x'})"><img src="${img(id)}" alt="${esc(name||'')}" loading="lazy" onerror="this.style.visibility='hidden'"></span>`;
+const esIcon=e=>`<i class="es-i">${e.icon&&!e.icon.includes(',')?`<img src="img/es_${esc(e.icon)}" alt="" onerror="this.remove()">`:''}</i>`;
+const big=n=>n>=1e12?(n/1e12).toLocaleString('en-US',{maximumFractionDigits:1})+' 兆':n>=1e8?(n/1e8).toLocaleString('en-US',{maximumFractionDigits:1})+' 億':n.toLocaleString('en-US');
+
+function roll(el,str){
+  str=String(str);const isD=c=>c>='0'&&c<='9';
+  el.innerHTML=[...str].map((c,i)=>isD(c)?`<span class="dg"><span class="st" style="transition-delay:${(str.length-1-i)*45}ms"><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span></span>`:`<span>${c}</span>`).join('');
+  el.offsetWidth;[...str].forEach((c,i)=>{if(isD(c))el.children[i].firstChild.style.transform=`translateY(${-c*10}%)`});
+}
+const tween=(a,b,ms,cb)=>{const t0=performance.now();const f=t=>{const p=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-p,4);cb(a+(b-a)*e);if(p<1)requestAnimationFrame(f)};requestAnimationFrame(f)};
+
+/* 關卡載入 */
+const seg=$('#seg'),pill=$('.seg-pill',seg),box=$('#enemies');
+let S,curS=0,where,segB=[],curF=-1,curSel=[0,0],curBest=[],showAll=false;
+$('#idxN').textContent=`${D.indexed.toLocaleString('en-US')} 張卡、${D.nskills.toLocaleString('en-US')} 個技能`;
+$('#upd').textContent=D.updated||'—';
+const narrow=()=>matchMedia('(max-width:1080px)').matches;
+$('#back').addEventListener('click',()=>$('#seg').closest('.card').scrollIntoView({behavior:'smooth',block:'start'}));
+
+/* 背包 */
+let bag=new Set(),only=false;
+try{bag=new Set(JSON.parse(localStorage.getItem('tos-bag')||'[]'));only=localStorage.getItem('tos-bag-only')==='1'&&bag.size>0}catch(e){}
+function parseBag(txt){
+  const ok=n=>Number.isInteger(n)&&n>0&&n<100000;
+  try{const j=JSON.parse(txt),arr=Array.isArray(j)?j:Object.values(j).find(Array.isArray)||[];
+    const ids=arr.map(x=>x&&typeof x==='object'?(x.id??x.cardId??x.monsterId??x.card_id):x).map(Number).filter(ok);
+    if(ids.length)return[...new Set(ids)]}catch(e){}
+  return[...new Set((txt.match(/\d+/g)||[]).map(Number).filter(ok))];
+}
+/* 某敵技分類可用的卡：套用背包篩選，同一個技能只留一張 */
+function hits(cat){
+  const seen=new Set();
+  return(D.cats[cat]?.cards||[]).filter(h=>{if(only&&!bag.has(h.id))return false;if(seen.has(h.skill))return false;seen.add(h.skill);return true});
+}
+function calcBest(){
+  const cov=new Map();
+  S.cats.forEach(c=>{const seen=new Set();(D.cats[c].cards||[]).forEach(h=>{if((only&&!bag.has(h.id))||seen.has(h.id))return;seen.add(h.id);
+    if(!cov.has(h.id))cov.set(h.id,{id:h.id,cats:[],sk:new Set()});const o=cov.get(h.id);o.cats.push(c);o.sk.add(h.skill)})});
+  const l=[...cov.values()].filter(o=>o.cats.length>=(only?1:2)).sort((a,b)=>b.cats.length-a.cats.length||D.cards[b.id].rare-D.cards[a.id].rare||b.id-a.id);
+  const sig=new Set();
+  return l.filter(o=>{const k=[...o.sk].sort().join('|');if(sig.has(k))return false;sig.add(k);return true}).slice(0,8);
+}
+function bagUI(){
+  const usable=[...bag].filter(i=>D.cards[i]).length;
+  roll($('#bagN'),bag.size.toLocaleString('en-US'));
+  $('#bagSt').textContent=bag.size?`${usable} 張能解本期敵技`:'尚未匯入';
+  $('#bagHint').textContent=bag.size?'關閉則顯示所有卡片':'先匯入背包才能開啟';
+  $('#bagOnly').disabled=!bag.size;$('#bagOnly').checked=only;
+  $('#bagOpen').textContent=bag.size?'編輯背包':'匯入背包';
+}
+function bagSave(){try{localStorage.setItem('tos-bag',JSON.stringify([...bag]));localStorage.setItem('tos-bag-only',only?'1':'0')}catch(e){}}
+const dlg=$('#bagDlg'),bagTxt=$('#bagTxt');
+const prev=()=>{const n=parseBag(bagTxt.value).length;$('#bagPrev').textContent=n?`辨識到 ${n} 個編號`:'還沒有編號'};
+$('#bagOpen').addEventListener('click',()=>{bagTxt.value=[...bag].sort((a,b)=>a-b).join(', ');prev();dlg.showModal()});
+bagTxt.addEventListener('input',prev);
+$('#bagClear').addEventListener('click',()=>{bagTxt.value='';prev();bagTxt.focus()});
+$('#bagFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;bagTxt.value=await f.text();prev();e.target.value=''});
+$('#bagSave').addEventListener('click',()=>{bag=new Set(parseBag(bagTxt.value));only=bag.size>0;bagSave();dlg.close();bagUI();load(curS,false,true)});
+$('#bagOnly').addEventListener('change',e=>{only=e.target.checked;bagSave();load(curS,false,true)});
+bagUI();
+
+function load(si,first,keep){
+  S=D.stages[curS=si];
+  $('#boss').src=img(S.boss);$('#boss').alt=S.name;
+  $('#open').textContent=S.open;$('#kind').textContent=S.kind||'本期關卡';
+  $('#sname').innerHTML=`${esc(S.name)}${S.page!==S.name?`<small>${esc(S.page)}</small>`:''}`;
+  $('#meta').innerHTML=[S.soon&&'即將開放',S.sta&&`體力 ${S.sta}`,`${S.battle} 層`,S.limit].filter(Boolean).map((t,i)=>`<span class="chip ${t=='即將開放'?'':i?'s':'k'}">${esc(t)}</span>`).join('');
+  $('#ach').innerHTML=S.ach.map(a=>`<li>${esc(a)}</li>`).join('');
+  const cats=S.cats,solv=cats.filter(c=>hits(c).length),pct=Math.round(solv.length/cats.length*100),from=+$('#covP').textContent||0;
+  $('#covN').textContent=`${solv.length} / ${cats.length} 種`;
+  $('.ring small').textContent=only?'你手上的卡能處理':'有卡可無視或解除';
+  setTimeout(()=>{$('.ring .v').style.strokeDashoffset=326.7*(1-pct/100);tween(from,pct,1100,x=>$('#covP').textContent=Math.round(x))},first?500:0);
+  /* 找出某敵技類別第一次出現的位置 */
+  where={};
+  S.floors.forEach((f,fi)=>f.enemies.forEach((en,ei)=>en.es.forEach((e,xi)=>{if(!(e.cat in where))where[e.cat]=[fi,ei,xi]})));
+  curBest=calcBest();
+  $('#bestL').textContent=only?'只列出你背包裡的卡':'點卡片看它能處理哪些敵技';
+  $('#best').innerHTML=curBest.map((b,i)=>{const c=D.cards[b.id];
+    return `<button class="bc" data-i="${i}">${art(b.id,c.attr,c.name)}<span class="bc-b"><strong>${esc(c.name)}</strong><span><span class="chip">解 ${b.cats.length} 種</span></span><small>${esc(b.cats.join('、'))}</small></span></button>`}).join('')||`<div class="empty" style="grid-column:1/-1">${only?'<strong>背包裡沒有能處理這關敵技的卡</strong>關閉「只推薦我有的卡」可以看到所有可用的卡。':'這關沒有能同時處理兩種以上敵技的卡。'}</div>`;
+  seg.style.setProperty('--n',S.floors.length);
+  segB.forEach(b=>seg.removeChild(b));
+  seg.insertAdjacentHTML('beforeend',S.floors.map((f,i)=>`<button data-i="${i}">R${f.floor}</button>`).join(''));
+  const kf=keep?curF:0,ks=keep?curSel:[0,0];
+  segB=$$('button',seg);curF=-1;setFloor(kf,ks);
+  /* 選單狀態 */
+  ddBtn.innerHTML=`${art(S.boss,'','')}<span class="t">${esc(S.name)}<small>${S.battle} 層 · ${cats.length} 種敵技</small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>`;
+  $$('button',ddMenu).forEach((b,j)=>{b.classList.toggle('sel',j==si);b.setAttribute('aria-selected',j==si)});
+  try{history.replaceState(null,'','#'+encodeURIComponent(S.name));localStorage.setItem('tos-stage',S.name)}catch(e){}
+}
+$('#best').addEventListener('click',e=>{const b=e.target.closest('.bc');if(!b)return;const cat=curBest[b.dataset.i].cats[0],[fi,ei,xi]=where[cat];
+  setFloor(fi,[ei,xi]);$('.work').scrollIntoView({behavior:'smooth',block:'start'})});
+
+/* 關卡選單 */
+const dd=$('#dd'),ddBtn=$('.dd-btn',dd),ddMenu=$('.dd-menu',dd);
+ddMenu.innerHTML=D.stages.map((s,i)=>`${i&&D.stages[i-1].kind===s.kind?'':`<h4>${esc(s.kind||'本期關卡')}</h4>`}<button role="option" data-i="${i}">${art(s.boss,'',s.name)}<span>${esc(s.name)}<small>${s.soon?'即將開放 · ':''}${s.battle} 層 · ${s.cats.length} 種敵技</small></span></button>`).join('');
+const ddSet=o=>{dd.classList.toggle('open',o);ddBtn.setAttribute('aria-expanded',o)};
+ddBtn.addEventListener('click',()=>ddSet(!dd.classList.contains('open')));
+ddMenu.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;ddSet(false);load(+b.dataset.i)});
+document.addEventListener('click',e=>{if(!dd.contains(e.target))ddSet(false)});
+document.addEventListener('keydown',e=>{if(e.key=='Escape')ddSet(false)});
+
+/* floors */
+seg.addEventListener('click',e=>{const b=e.target.closest('button');if(b)setFloor(+b.dataset.i)});
+
+async function setFloor(k,pick=[0,0]){
+  if(k!==curF){
+    curF=k;const f=S.floors[k];
+    segB.forEach((b,j)=>b.classList.toggle('on',j==k));pill.style.transform=`translateX(${k*100}%)`;
+    $('#flbl').textContent=`第 ${f.floor} 層 · ${f.phases?f.enemies.length+' 段血':f.enemies.length+' 隻敵人'}`;
+    box.classList.add('out');await sleep(180);
+    box.innerHTML=f.enemies.map((en,ei)=>`<div><div class="en-h">${art(en.id,en.attr,en.name)}<div><strong>${esc(en.name)}</strong><small class="num">生命 ${big(en.hp)} · 防禦 ${big(en.df)} · CD ${en.cd}</small></div>${f.phases?`<span class="chip s">第 ${ei+1} 段</span>`:''}</div>
+      <div class="es">${en.es.map((e,xi)=>{const n=hits(e.cat).length;return `<button data-e="${ei}" data-x="${xi}">${esIcon(e)}<span>${esc(e.title)}</span><em class="${n?'has num':''}">${n?n+' 張':only&&D.cats[e.cat]?.total?'沒有卡':'靠機制'}</em></button>`}).join('')}</div></div>`).join('');
+    box.classList.remove('out');
+  }
+  pickES(...pick);
+}
+box.addEventListener('click',e=>{const b=e.target.closest('.es button');if(b){showAll=false;pickES(+b.dataset.e,+b.dataset.x);if(narrow())$('.detail').scrollIntoView({behavior:'smooth',block:'start'})}});
+$('#detail').addEventListener('click',e=>{if(e.target.closest('.more')){showAll=true;pickES(...curSel)}});
+
+/* detail */
+const det=$('#detail');let tok=0;
+async function pickES(ei,xi){
+  const en=S.floors[curF].enemies[ei]||S.floors[curF].enemies[ei=0];if(!en.es[xi])xi=0;
+  const my=++tok,e=en.es[xi],c=D.cats[e.cat]||{tip:'',total:0,cards:[]},all=hits(e.cat),list=showAll?all:all.slice(0,8);
+  curSel=[ei,xi];
+  $$('.es button',box).forEach(b=>b.classList.toggle('on',+b.dataset.e==ei&&+b.dataset.x==xi));
+  $('#dcat').textContent=e.cat;
+  det.classList.add('out');await sleep(180);if(my!==tok)return;
+  det.innerHTML=`<div class="d-h">${esIcon(e)}<div><strong>${esc(e.title)}</strong><small>分類：${esc(e.cat)}</small></div></div>
+    <p class="d-eff">${esc(e.effect)}</p>
+    ${c.tip?`<div class="note"><i></i><div><small>應對方式</small>${esc(c.tip)}</div></div>`:''}
+    <div class="recs-h"><span>${only?'你能用的卡片':'能處理的卡片'}</span><span class="num">${all.length?`顯示 ${list.length} / 共 ${all.length} 張`:''}</span></div>
+    ${all.length?`<div class="recs">${list.map(h=>{const k=D.cards[h.id];
+      return `<div class="rc">${art(h.id,k.attr,k.name)}<div class="rc-b"><div class="rc-t"><span class="chip">${esc(h.verb)}</span><span class="chip s">${esc(h.kind)}${h.cd?` · CD ${esc(h.cd)}`:''}</span>${!only&&bag.has(h.id)?'<span class="chip k">已擁有</span>':''}</div><strong>${esc(k.name)}</strong><p><b>${esc(h.skill)}</b>　${esc(h.text)}</p></div></div>`}).join('')}</div>${all.length>list.length?`<button class="btn s more">顯示全部 ${all.length} 張</button>`:''}`
+    :only&&c.total?`<div class="empty"><strong>你的背包裡沒有能處理的卡</strong>關閉「只推薦我有的卡」可以看到 ${c.total} 張可用的卡。</div>`
+    :`<div class="empty"><strong>沒有卡片能直接無視</strong>索引內的卡片技能沒有提到這個敵技，只能照敵技說明的機制處理。</div>`}`;
+  det.classList.remove('out');
+  let n=0;for(const r of $$('.rc',det)){if(my!==tok)return;r.offsetWidth;r.classList.add('in');if(n++<10)await sleep(55)}
+}
+{let want='';try{want=decodeURIComponent(location.hash.slice(1))||localStorage.getItem('tos-stage')||''}catch(e){}
+ load(Math.max(0,D.stages.findIndex(s=>s.name===want)),true);}
+</script>
+</body>
+</html>

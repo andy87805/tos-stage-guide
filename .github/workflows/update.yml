@@ -1,0 +1,68 @@
+name: Update stage data and deploy
+
+# 每天自動從神魔之塔繁中維基同步本期關卡，更新後部署到 GitHub Pages。
+# 首次使用前：Repo → Settings → Pages → Source 選 "GitHub Actions"
+
+on:
+  schedule:
+    # 22:20 UTC = 06:20 台灣時間；14:40 UTC = 22:40 台灣時間（夢魘／地獄級 22:00 開放後）
+    - cron: "20 22 * * *"
+    - cron: "40 14 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 抓不到維基時腳本會以失敗結束、不覆寫舊資料；這一步失敗仍會照舊資料部署
+      - name: Update data
+        id: data
+        continue-on-error: true
+        run: python tools/update.py
+
+      - name: Commit data
+        if: steps.data.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.js img tools/index.json
+          git diff --cached --quiet || git commit -m "Update stage data"
+          git push
+
+      - name: Build site folder
+        run: |
+          mkdir _site
+          cp -r index.html data.js manifest.webmanifest icon-180.png icon-512.png img _site/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Fail if data update failed
+        if: steps.data.outcome != 'success'
+        run: exit 1
