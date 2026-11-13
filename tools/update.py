@@ -182,6 +182,60 @@ def es_keys(t):
         for pat,term in ALIAS:
             if re.search(pat,c): keys.add(term)
     return ' ‧ '.join(cores),title,keys
+# ───────── 4. 玩家通關資料（巴哈姆特）─────────
+# 兩個來源都是社群整理的，抓不到就沿用上一次的結果，不影響其他資料。
+BAHA='https://forum.gamer.com.tw/'
+SHEET='1UskNXHte_bWMsJD5miZ0HHQlMUz92NOtskl-djr3dEg'   # 巴哈「地獄/夢魘 通關隊長彙整」串附的公開試算表
+BUA={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36','Accept-Language':'zh-TW,zh;q=0.9'}
+def http(url):
+    return urllib.request.urlopen(urllib.request.Request(url,headers=BUA),timeout=30).read().decode('utf-8','ignore')
+def baha_posts(page):
+    """用關卡名稱搜尋哈啦板，回傳標題含關卡名的攻略／心得／討論文"""
+    t=http(BAHA+'B.php?bsn=23805&qt=1&q='+urllib.parse.quote(page))
+    key=norm(re.sub(r'[\(（].*?[\)）]','',page));out=[]
+    for row in t.split('<tr class="b-list__row')[1:]:
+        m=re.search(r'href="C\.php\?bsn=23805&snA=(\d+)[^"]*"[^>]*class="b-list__main__title[^"]*"[^>]*>(.*?)</(?:p|a)>',row,re.S) \
+          or re.search(r'class="b-list__main__title[^"]*"[^>]*href="C\.php\?bsn=23805&snA=(\d+)[^"]*"[^>]*>(.*?)</(?:p|a)>',row,re.S)
+        if not m: continue
+        title=re.sub(r'\s+',' ',html.unescape(re.sub(r'<[^>]+>','',m.group(2)))).strip()
+        if key not in norm(title) or not re.match(r'【(攻略|心得|討論)】',title): continue
+        gp=re.search(r'b-list__summary__gp[^>]*>\s*(\d+)',row)
+        out.append(dict(t=title[:140],u=f'{BAHA}C.php?bsn=23805&snA={m.group(1)}',gp=int(gp.group(1)) if gp else 0,sum='彙整' in title))
+    out.sort(key=lambda p:(-p['sum'],-p['gp']))
+    return out[:8]
+def sheet_teams():
+    """彙整試算表 → {魔王卡片編號: [隊伍]}；每列是一筆通關紀錄"""
+    import csv,io
+    t=http(f'https://docs.google.com/spreadsheets/d/{SHEET}/htmlview')
+    tabs=[(json.loads('"'+n+'"'),g) for n,g in re.findall(r'name: "(.*?)", pageUrl: ".*?", gid: "(\d+)"',t)]
+    out={}
+    for name,gid in tabs:
+        if re.search('統計|連結|統整',name) or not re.match(r'\s*\d+/\d+',name): continue
+        rows=list(csv.reader(io.StringIO(http(f'https://docs.google.com/spreadsheets/d/{SHEET}/export?format=csv&gid={gid}'))))
+        num=lambda r,i:int(r[i]) if len(r)>i and r[i].strip().isdigit() else 0
+        for r in rows:
+            boss,lead=num(r,1),num(r,5)
+            if not boss or not lead or lead>=99999 or (len(r)>27 and r[27].strip()=='X'): continue
+            g=lambda i:r[i].strip() if len(r)>i else ''
+            out.setdefault(boss,[]).append(dict(lead=lead,mem=[x for x in (num(r,i) for i in range(18,22)) if x],ally=num(r,22),
+                n=num(r,16),type=g(17).strip('.'),proof=re.sub(r'^\d+\.','',g(12)),grp=g(15),floor=num(r,0),tab=name.strip()))
+    return out
+def community(stages,prev):
+    """把通關隊伍與攻略文掛到各關卡上；失敗時沿用 prev（上一份 data.js 的關卡）"""
+    old={s['name']:s for s in prev}
+    try: teams=sheet_teams();print('  彙整表：',{b:len(v) for b,v in teams.items()},flush=True)
+    except Exception as e: teams=None;print('  彙整表失敗',e)
+    posts={};ok=True
+    for pg in dict.fromkeys(s['page'] for s in stages):
+        if not ok: break
+        try: posts[pg]=baha_posts(pg);time.sleep(0.6)
+        except Exception as e: ok=False;print('  巴哈搜尋失敗',pg,e)
+    for s in stages:
+        o=old.get(s['name'],{})
+        s['teams']=teams.get(s['boss'],[]) if teams is not None else o.get('teams',[])
+        s['posts']=posts[s['page']] if s['page'] in posts else o.get('posts',[])
+    print('  巴哈攻略文：',sum(len(s['posts'])>0 for s in stages),'/',len(stages),'關有文章')
+
 def main():
     idx=load_index();update_index(idx)
     cards=idx['cards'];skills={n:s for n,s in idx['skills'].items() if s}
@@ -260,6 +314,11 @@ def main():
         ids|={h['id'] for c in used for h in cache[c]['cards']}
         files[f"{s['boss']}i.png"]=f"c{s['boss']}.png"
         stages.append({k:s[k] for k in('page','name','kind','boss','sta','open','soon','limit','ach')}|dict(battle=len(floors),cats=used,floors=floors))
+    prev=[]
+    try: prev=json.loads(open(os.path.join(OUT,'data.js'),encoding='utf-8').read()[12:-1]).get('stages',[])
+    except Exception: pass
+    community(stages,prev)
+    ids|={i for s in stages for t in s['teams'] for i in [t['lead'],t['ally'],*t['mem']] if str(i) in cards}
     out_cards={i:{k:cards[str(i)].get(k,'') for k in('name','attr','race','rare')} for i in ids}
     files.update({f'{i}i.png':f'c{i}.png' for i in ids})
     # 卡圖：只抓還沒有的

@@ -194,6 +194,29 @@ footer{color:var(--mute);font-size:12px;padding:20px 6px 0;line-height:1.6}
   .work{grid-template-columns:minmax(0,1fr)}
   .detail{position:static}
 }
+/* 通關隊伍、攻略文 */
+.wide{margin-top:16px}
+.wide[hidden]{display:none}
+.tms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tm{display:flex;flex-direction:column;gap:9px;padding:12px;border-radius:20px;background:var(--soft);min-width:0}
+.tm-c{display:flex;gap:6px;align-items:flex-start}
+.tm-c .art{width:calc((100% - 30px)/6);max-width:60px;border-radius:13px}
+.tm-c .art.no{opacity:.3;filter:grayscale(1)}
+.tm-c .art.ld{box-shadow:0 0 0 2px var(--ink)}
+.tm-c .art.al{box-shadow:0 0 0 2px var(--accent);margin-left:auto}
+.tm-c .art b{position:absolute;inset:0;display:grid;place-items:center;font-size:10px;font-weight:700;color:var(--mute)}
+.tm-m{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.tm-m strong{font-size:13px;font-weight:700;margin-right:auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.src{color:var(--mute);font-size:12px;margin-top:14px;line-height:1.6}
+.src a,.post:hover span{text-decoration:underline;text-underline-offset:2px}
+.src a{color:var(--ink)}
+.posts{display:flex;flex-direction:column;gap:6px}
+.post{display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 12px;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--line);color:inherit;text-decoration:none;transition:background .3s,transform .45s var(--spring)}
+.post:hover{background:var(--soft)}
+.post:active{transform:scale(.98)}
+.post span{font-weight:600;font-size:13px;line-height:1.35;min-width:0}
+.post em{margin-left:auto;font-style:normal;font-size:12px;font-weight:700;color:var(--mute);white-space:nowrap}
+@media(max-width:1080px){.tms{grid-template-columns:minmax(0,1fr)}}
 .back{display:none;margin-bottom:14px;height:40px}
 .dd-menu h4{font-size:11px;font-weight:600;color:var(--mute);letter-spacing:.04em;padding:10px 10px 4px}
 @media(max-width:1080px){.back{display:inline-flex}.work>.card{scroll-margin-top:calc(12px + env(safe-area-inset-top))}}
@@ -270,6 +293,17 @@ footer{color:var(--mute);font-size:12px;padding:20px 6px 0;line-height:1.6}
     <div class="d-in" id="detail"></div>
   </section>
 </div>
+
+<section class="card wide" id="teamsC" hidden>
+  <div class="lbl">玩家通關隊伍<b id="teamsN"></b></div>
+  <div class="tms" id="teams"></div>
+  <p class="src">每列是一筆 0 石通關紀錄：隊長、隊員、戰友。資料來自巴哈姆特哈啦板玩家維護的<a href="https://docs.google.com/spreadsheets/d/1UskNXHte_bWMsJD5miZ0HHQlMUz92NOtskl-djr3dEg/htmlview" target="_blank" rel="noopener">通關隊長彙整試算表</a>，龍刻與打法請看原串。</p>
+</section>
+
+<section class="card wide" id="postsC" hidden>
+  <div class="lbl">巴哈姆特攻略文<b id="postsN"></b></div>
+  <div class="posts" id="posts"></div>
+</section>
 </main>
 
 <footer>推薦依卡片技能文字自動比對，只代表「能處理這個敵技」，不代表能通關；種族、屬性等生效條件請看每張卡的說明。卡片索引範圍為編號 9300 之後（<span id="idxN"></span>），新卡若維基尚未補上技能則不會出現。背包只存在這個瀏覽器裡，不會上傳。<br>資料更新於 <span id="upd"></span>（台灣時間），每天自動從神魔之塔繁中維基同步本期關卡。</footer>
@@ -411,6 +445,11 @@ function load(si,first,keep){
   seg.style.setProperty('--n',S.floors.length);
   segB.forEach(b=>seg.removeChild(b));
   seg.insertAdjacentHTML('beforeend',S.floors.map((f,i)=>`<button data-i="${i}">R${f.floor}</button>`).join(''));
+  if(!keep)teamAll=false;
+  renderTeams();
+  $('#postsC').hidden=!(S.posts&&S.posts.length);
+  $('#postsN').textContent=S.posts&&S.posts.length?`${S.posts.length} 篇`:'';
+  $('#posts').innerHTML=(S.posts||[]).map(p=>`<a class="post" href="${esc(p.u)}" target="_blank" rel="noopener">${p.sum?'<i class="chip">彙整</i>':''}<span>${esc(p.t)}</span><em class="num">${p.gp} GP</em></a>`).join('');
   const kf=keep?curF:0,ks=keep?curSel:[0,0];
   segB=$$('button',seg);curF=-1;setFloor(kf,ks);
   /* 選單狀態 */
@@ -420,6 +459,23 @@ function load(si,first,keep){
 }
 $('#best').addEventListener('click',e=>{const b=e.target.closest('.bc');if(!b)return;const cat=curBest[b.dataset.i].cats[0],[fi,ei,xi]=where[cat];
   setFloor(fi,[ei,xi]);$('.work').scrollIntoView({behavior:'smooth',block:'start'})});
+
+/* 玩家通關隊伍：有背包時把缺的卡變淡，並把缺卡最少的排前面（戰友是別人的卡，不算缺） */
+let teamAll=false;
+function renderTeams(){
+  const T=S.teams||[],has=bag.size>0;
+  $('#teamsC').hidden=!T.length;if(!T.length)return;
+  const own=i=>!has||bag.has(i);
+  const rows=T.map(t=>({...t,need:[t.lead,...t.mem],miss:[t.lead,...t.mem].filter(i=>!own(i)).length}))
+    .sort((a,b)=>a.miss-b.miss||a.n-b.n||a.lead-b.lead);
+  const ready=rows.filter(r=>!r.miss).length,list=teamAll?rows:rows.slice(0,10);
+  $('#teamsN').textContent=has?`${rows.length} 隊 · 你能組 ${ready} 隊`:`${rows.length} 隊`;
+  const pic=(i,cls)=>{const c=D.cards[i];return c?`<span class="art ${cls}${c.attr?'':' na'}" style="--a:var(--a-${c.attr||'x'})" title="${esc(c.name)}"><img src="${img(i)}" alt="${esc(c.name)}" loading="lazy" onerror="this.style.visibility='hidden'"></span>`:`<span class="art na ${cls}" title="No.${i}"><b>${i}</b></span>`};
+  $('#teams').innerHTML=list.map(t=>`<div class="tm"><div class="tm-c">${pic(t.lead,'ld'+(own(t.lead)?'':' no'))}${t.mem.map(i=>pic(i,own(i)?'':'no')).join('')}${t.ally?pic(t.ally,'al'):''}</div>
+    <div class="tm-m"><strong>${esc(D.cards[t.lead]?.name||'No.'+t.lead)}</strong>${has?`<span class="chip ${t.miss?'s':''}">${t.miss?`缺 ${t.miss} 張`:'可組'}</span>`:''}<span class="chip k">${t.n} 卡</span>${t.type?`<span class="chip s">${esc(t.type)}</span>`:''}${t.proof?`<span class="chip s">${esc(t.proof)}</span>`:''}</div></div>`).join('')
+    +(rows.length>list.length?`<button class="btn s more" style="grid-column:1/-1">顯示全部 ${rows.length} 隊</button>`:'');
+}
+$('#teams').addEventListener('click',e=>{if(e.target.closest('.more')){teamAll=true;renderTeams()}});
 
 /* 關卡選單 */
 const dd=$('#dd'),ddBtn=$('.dd-btn',dd),ddMenu=$('.dd-menu',dd);
