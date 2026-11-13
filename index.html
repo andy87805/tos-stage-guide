@@ -112,6 +112,14 @@ dialog h3{font-size:19px;font-weight:700}
 dialog p{color:var(--mute);font-size:13px;margin:6px 0 14px}
 dialog textarea{width:100%;border:0;border-radius:16px;background:var(--soft);padding:12px 14px;font:500 14px/1.5 ui-monospace,Consolas,monospace;color:var(--ink);resize:vertical;outline:1.5px solid transparent;transition:outline-color .3s,background .3s}
 dialog textarea:focus{outline-color:var(--ink);background:#fff}
+dialog{max-height:calc(100dvh - 32px);overflow:auto}
+dialog h4{font-size:12px;font-weight:600;color:var(--mute);letter-spacing:.04em;margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.uid-r{display:grid;grid-template-columns:3fr 2fr;gap:8px}
+.uid-r input{min-width:0;height:48px;border:0;border-radius:15px;background:var(--soft);padding:0 14px;font:600 16px/1 inherit;font-family:inherit;color:var(--ink);font-variant-numeric:tabular-nums;outline:1.5px solid transparent;transition:outline-color .3s,background .3s}
+.uid-r input:focus{outline-color:var(--ink);background:#fff}
+#bagFS.bad{color:#c8321f;font-weight:600}
+#bagFS.ok{color:var(--ink);font-weight:600}
+.btn[disabled]{opacity:.5;pointer-events:none}
 .dlg-r{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;color:var(--mute)}
 .dlg-r.end{justify-content:flex-end;margin-top:20px}
 .more{margin-top:10px;width:100%}
@@ -270,8 +278,15 @@ footer{color:var(--mute);font-size:12px;padding:20px 6px 0;line-height:1.6}
 <dialog id="bagDlg" aria-labelledby="bagT">
   <form method="dialog">
     <h3 id="bagT">匯入背包</h3>
-    <p>貼上你擁有的卡片編號，用逗號、空白或換行分隔都可以；也能直接選擇 TXT、CSV 或 JSON 檔。進化前後算不同編號，請填目前持有的那一張。</p>
-    <textarea id="bagTxt" rows="7" placeholder="例如：11096, 11277, 10993" spellcheck="false"></textarea>
+    <p>從官方「神魔健檢中心」抓你的背包：輸入遊戲 UID 與活動驗證碼（和登入健檢中心用的是同一組）。驗證碼只會從這個瀏覽器直接送到官方健檢中心，不會被儲存。</p>
+    <div class="uid-r">
+      <input id="bagUid" inputmode="numeric" autocomplete="off" placeholder="UID" aria-label="UID" maxlength="12">
+      <input id="bagAuth" inputmode="numeric" autocomplete="off" placeholder="驗證碼" aria-label="活動驗證碼" maxlength="10">
+    </div>
+    <div class="dlg-r"><button type="button" class="btn" id="bagFetch">從健檢中心匯入</button><span id="bagFS" role="status"></span></div>
+    <h4>或手動輸入</h4>
+    <p>貼上卡片編號，用逗號、空白或換行分隔；也能選擇 TXT、CSV 或 JSON 檔。進化前後算不同編號。</p>
+    <textarea id="bagTxt" rows="4" placeholder="例如：11096, 11277, 10993" spellcheck="false"></textarea>
     <div class="dlg-r"><label class="btn s">選擇檔案<input type="file" id="bagFile" accept=".txt,.csv,.json,text/plain,application/json" hidden></label><span id="bagPrev"></span></div>
     <div class="dlg-r end"><button type="button" class="btn s" id="bagClear">清空</button><button class="btn s" value="cancel">取消</button><button type="button" class="btn" id="bagSave">儲存</button></div>
   </form>
@@ -336,7 +351,38 @@ function bagUI(){
 function bagSave(){try{localStorage.setItem('tos-bag',JSON.stringify([...bag]));localStorage.setItem('tos-bag-only',only?'1':'0')}catch(e){}}
 const dlg=$('#bagDlg'),bagTxt=$('#bagTxt');
 const prev=()=>{const n=parseBag(bagTxt.value).length;$('#bagPrev').textContent=n?`辨識到 ${n} 個編號`:'還沒有編號'};
-$('#bagOpen').addEventListener('click',()=>{bagTxt.value=[...bag].sort((a,b)=>a-b).join(', ');prev();dlg.showModal()});
+$('#bagOpen').addEventListener('click',()=>{bagTxt.value=[...bag].sort((a,b)=>a-b).join(', ');prev();
+  try{$('#bagUid').value=localStorage.getItem('tos-uid')||''}catch(e){}
+  $('#bagAuth').value='';fs('');dlg.showModal()});
+/* 從官方神魔健檢中心匯入：先用 UID＋驗證碼登入換 token，再讀自己的背包 */
+const CK='https://website-api.tosgame.com/api/checkup';
+const fs=(t,c='')=>{const e=$('#bagFS');e.textContent=t;e.className=c};
+async function ckJson(url,opt){
+  const r=await fetch(url,opt);let j=null;try{j=await r.json()}catch(e){}
+  if(!r.ok&&!j)throw new Error(`健檢中心回應 ${r.status}`);
+  return j||{};
+}
+$('#bagFetch').addEventListener('click',async()=>{
+  const uid=$('#bagUid').value.trim(),auth=$('#bagAuth').value.trim(),btn=$('#bagFetch');
+  if(!/^\d{5,12}$/.test(uid))return fs('請輸入正確的 UID','bad');
+  if(!/^\d{4,10}$/.test(auth))return fs('請輸入驗證碼','bad');
+  btn.disabled=true;fs('連線中…');
+  try{
+    const lg=await ckJson(`${CK}/login?token=&uid=${encodeURIComponent(uid)}&auth=${encodeURIComponent(auth)}`,{method:'POST'});
+    if(!lg.token)throw new Error(lg.errorMessage||'登入失敗，請確認 UID 與驗證碼');
+    fs('讀取背包中…');
+    const pf=await ckJson(`${CK}/getUserProfile?targetUid=${encodeURIComponent(uid)}&token=${encodeURIComponent(lg.token)}`);
+    const cs=pf.userData&&pf.userData.cards;
+    if(!Array.isArray(cs))throw new Error(pf.errorMessage||'讀不到背包資料');
+    const ids=[...new Set(cs.map(c=>+c.id).filter(n=>Number.isInteger(n)&&n>0))];
+    if(!ids.length)throw new Error('背包是空的，請先到健檢中心登入一次讓資料同步');
+    bag=new Set(ids);only=true;bagSave();try{localStorage.setItem('tos-uid',uid)}catch(e){}
+    $('#bagAuth').value='';bagTxt.value=ids.sort((a,b)=>a-b).join(', ');prev();
+    fs(`已匯入 ${ids.length} 種卡`,'ok');bagUI();load(curS,false,true);
+    setTimeout(()=>dlg.open&&dlg.close(),900);
+  }catch(e){fs(e instanceof TypeError?'連不上健檢中心，請稍後再試':String(e.message||e).slice(0,60),'bad')}
+  btn.disabled=false;
+});
 bagTxt.addEventListener('input',prev);
 $('#bagClear').addEventListener('click',()=>{bagTxt.value='';prev();bagTxt.focus()});
 $('#bagFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;bagTxt.value=await f.text();prev();e.target.value=''});
