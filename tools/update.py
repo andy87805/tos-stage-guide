@@ -127,78 +127,105 @@ def parse_page(e,wt):
     return out
 
 # ───────── 3. 比對 ─────────
-# 手寫的別名與應對方式；沒列到的敵技會自動用分類名稱與標題去比對
-CFG={
- '不朽聖果':([],'場上需保留指定數量的「不朽聖果」才打得出傷害，轉珠時別把聖果消掉。'),
- 'T字限盾':(['T字限盾'],'首批以 T 形消除 5 粒符石。'),
- 'L字限盾':(['L字限盾'],'首批以 L 形消除 5 粒符石。'),
- '十字限盾':(['十字限盾'],'首批以十字形消除 5 粒符石。'),
- '喋血屠刀':(['喋血屠刀'],'敵人攻擊時直接扣除大量生命力，減傷與意志無效；要在它出手前擊殺或用吸收類技能。'),
- '無法控制':(['無法控制'],'敵人不吃狀態，延遲、凍結類技能無效。'),
- '首消不同種類盾':(['首消不同種類盾'],'首消指定連擊數，每組種類不可重複。'),
- '首消相同種類盾':(['首消相同種類盾'],'首消指定連擊數，全部要同一種類。'),
- '回復自損':(['回復顛倒'],'消心符石會反過來扣血，避開心符石或帶無視。'),
- '終結倒數':(['終結倒數'],'倒數結束前沒擊殺就直接死亡。'),
- '首消指定組屬性符石盾':(['首消組數屬性符石盾'],'首批消除指定組數的屬性符石。'),
- '傷害零化':(['反首消符石盾'],'首批不能消到指定屬性的符石。'),
- '連擊零化':(['符石連擊零化'],'首批消到指定屬性符石，全隊攻擊力歸零。'),
- '灼熱地型':(['灼熱地型'],'在地型內消除符石會扣生命力，護盾可擋。'),
- '角色符石地型盾':(['角色符石地型盾'],'結束轉珠時角色符石要停在鎖定格內。'),
- '粒數盾':(['首消粒數盾'],'首批消除指定粒數的符石。'),
- '首消顆數盾':(['首消粒數盾'],'首批消除指定粒數的符石。'),
- '愈扣愈強':([],'首次被打就扣大量生命力且愈打愈痛，速戰速決。'),
- '附加消除重置':([],'進場清除所有附加效果並重置技能 CD，別在上一層先開技。'),
- '始終盾':(['起結有序'],'從綠色漩渦起手、在紅色漩渦收尾。'),
- '炎之氣':([],'炎之氣歸零前擊殺會直接死亡，護盾與減傷失效。'),
- '消炎印記':([],'消除帶印記的符石來削減炎之氣。'),
- '全消盾':(['全版消除盾','全消盾'],'首批消除場上所有符石。'),
- '符石禁消':([],'無法消除指定符石。'),
- '加護符石':(['加護符石'],'場上要有加護符石才打得出傷害，可用技能自行添加。'),
- '連擊盾':(['固定連擊盾'],'需達成指定連擊數。'),
- 'Combo盾':(['固定連擊盾'],'需達成指定連擊數。'),
- '百分比盾':(['%防禦盾'],''),
- '符石佑律':([],'被移除、引爆的符石一律變成指定屬性符石。'),
- '聖劍裁決':([],'擊殺前把深淵滅襲壓到 0%。'),
- '攻速變更':([],'首次攻擊 CD 被改短，進場就要處理。'),
-}
+# 卡片技能寫的是「遊戲內敵技名稱」，維基的 content 分類則常是另一套名字，
+# 所以比對以敵技標題為主：標題去掉數字與註記後得到核心名稱，再經別名表轉成卡片用語。
+ALIAS=[  # (核心名稱的 regex, 卡片技能中的用語)
+ (r'^消.+禁咒$','符石禁咒'),(r'形狀盾$|^拼圖盾$','指定形狀盾'),(r'^防禦盾$','%防禦盾'),
+ (r'^反首消.*符石盾$','反首消符石盾'),(r'連擊零化$','符石連擊零化'),
+ (r'^首消.*粒數盾$|^首消.*顆數盾$','首消粒數盾'),(r'^首消.*組屬性符石盾$','首消組數屬性符石盾'),
+ (r'^全版消除盾$','全消盾'),(r'^全消盾$','全版消除盾'),(r'^減傷抗性','指定減傷抗性敵技'),
+ (r'^固定連擊盾$','固定連擊盾'),(r'^反擊$','敵人反擊傷害'),(r'步限制$','步數限制'),
+ (r'^殞命輪迴$','殞命輪迴倒數'),(r'^痲痺$','麻痺'),(r'符石護盾粒?$','累積符石盾'),
+ (r'^回復自損$','回復顛倒'),(r'^起結有序|^始終盾$','起結有序'),(r'^灼熱地型','灼熱地型'),
+ (r'^符石禁消$|^消除禁咒$','符石禁咒'),(r'^百分比盾$','%防禦盾'),
+ (r'十字限盾$','十字限盾'),(r'T字限盾$','T字限盾'),(r'L字限盾$','L字限盾'),(r'符石加護$','加護符石'),
+]
+TIPS=[  # (核心名稱的 regex, 應對方式)
+ (r'^不朽聖果','場上需保留指定數量的「不朽聖果」才打得出傷害，轉珠時別把聖果消掉。'),
+ (r'^T字限盾','首批以 T 形消除 5 粒符石。'),(r'^L字限盾','首批以 L 形消除 5 粒符石。'),(r'^十字限盾','首批以十字形消除 5 粒符石。'),
+ (r'^喋血屠刀','敵人攻擊時直接扣除大量生命力，減傷與意志無效；要在它出手前擊殺或用吸收類技能。'),
+ (r'^無法控制','敵人不吃狀態，延遲、凍結類技能無效。'),
+ (r'^首消不同種類盾','首消指定連擊數，每組種類不可重複。'),(r'^首消相同種類盾','首消指定連擊數，全部要同一種類。'),
+ (r'^回復顛倒','消心符石會反過來扣血，避開心符石或帶無視。'),(r'^終結倒數','倒數結束前沒擊殺就直接死亡。'),
+ (r'^首消.*組屬性符石盾','首批消除指定組數的屬性符石。'),(r'^反首消.*符石盾','首批不能消到指定屬性的符石。'),
+ (r'連擊零化$','首批消到指定屬性符石，全隊攻擊力歸零。'),(r'^灼熱地型','在地型內消除符石會扣生命力，護盾可擋。'),
+ (r'^角色符石地型盾','結束轉珠時角色符石要停在鎖定格內。'),(r'^首消.*粒數盾','首批消除指定粒數的符石。'),
+ (r'^愈攻愈強|^越攻越強','愈打愈痛，速戰速決。'),(r'^淨世','進場清除所有附加效果並重置技能 CD，別在上一層先開技。'),
+ (r'^起結有序','從綠色漩渦起手、在紅色漩渦收尾。'),(r'^炎之氣','炎之氣歸零前擊殺會直接死亡，護盾與減傷失效。'),
+ (r'^消炎印記','消除帶印記的符石來削減炎之氣。'),(r'^全版消除盾|^全消盾','首批消除場上所有符石。'),
+ (r'^消.+禁咒$','無法消除指定符石。'),(r'加護$|^加護符石','場上要有加護符石才打得出傷害，可用技能自行添加。'),
+ (r'^固定連擊盾','首批要剛好消除指定的連擊數。'),(r'^連擊盾$','需達成指定以上的連擊數，沒有卡能無視，靠增加連擊的技能湊數。'),
+ (r'之佑律$','被移除、引爆的符石一律變成指定屬性符石。'),(r'^深淵滅襲|^聖劍裁決','擊殺前把深淵滅襲壓到 0%。'),
+ (r'^首攻CD','首次攻擊 CD 被改短，進場就要處理。'),(r'形狀盾$|^拼圖盾','在指定位置、以指定形狀消除符石。'),
+ (r'^五屬盾','同一回合消除五種屬性符石。'),(r'^攻前盾','敵人攻擊前打不出傷害，要先撐過一次攻擊或帶無視。'),
+]
+VERB='無視|解除|減少|減至|添加|吸收|不會|免疫|不受|抵銷|破除|傷害轉化'
+LIST=re.compile(r'^[\s▍▶▷◆⇒•⓵-⓿①-⑳IVX.\d()（）、及和與]*(?:包括)?「')   # 清單的續行：開頭就是「…」
+RENAME={'步限制':'步數限制','次受擊護盾':'受擊護盾','首攻CD':'首攻 CD 變更'}
+def core(part):
+    p=re.sub(r'[\(（].*?[\)）]','',part);p=re.split(r'\s[-–]\s',p)[0]
+    p=re.sub(r'\d[\d,.]*\s*(?:粒|層|組|個)(?=\s|$)','',p)
+    p=re.sub(r'[\d\s%％≥≤＋+.,，〖〗【】「」]|萬|點$','',p)
+    return RENAME.get(p,p)
+def es_keys(t):
+    """敵技模板 → (分類名稱, 標題, 比對用語集合)"""
+    title=clean(t.get('title','')).strip('【】〖〗')
+    content=[norm(c) for c in (t.get('content') or '').split(',') if c.strip()]
+    if not title:   # 沒有標題時，效果文字開頭的【…】通常就是遊戲內名稱
+        m=re.search(r'【(.+?)】',clean(t.get('effect','')))
+        title=m.group(1) if m and '凝護' not in m.group(1) else ''
+    cores=[c for c in (core(p) for p in re.split(r'\s*[‧．]\s*',title)) if len(c)>=2]
+    if not cores: cores=content[:1]
+    keys=set(cores)|{c for c in content if c not in('連擊盾','Combo盾','指定Combo盾','弱攻','傷害零化','減傷')}
+    for c in list(keys):
+        if c.endswith('狀態') and len(c)>3: keys.add(c[:-2])
+        for pat,term in ALIAS:
+            if re.search(pat,c): keys.add(term)
+    return ' ‧ '.join(cores),title,keys
 def main():
     idx=load_index();update_index(idx)
     cards=idx['cards'];skills={n:s for n,s in idx['skills'].items() if s}
     if len(cards)<1000: sys.exit('卡片索引異常，中止')
-    for s in skills.values(): s['n']=norm(s['eff'])
     byskill={}
     for cid,c in cards.items():
         for k in SLOTS:
             if c.get(k) in skills: byskill.setdefault(c[k],[]).append((int(cid),k))
     rare=lambda i:int(cards[str(i)].get('rare') or 0)
-    def snippet(eff,key):
-        lines=[l for l in (clean(x) for x in re.split(r'<br\s*/?>',eff)) if l]
-        for i,l in enumerate(lines):
-            if key in norm(l):
-                s=l if re.search('無視|解除|減少|添加|吸收',l) or i==0 else lines[i-1]+' '+l
-                return re.sub(r'\s+',' ',s)
-        return ''
+    # 反向索引：卡片用語 → [(技能名, 動詞, 原文片段)]
+    # 「A」、「B」及「C」這種清單常跨好幾行，動詞只出現在第一行，所以往上找最多 5 行
+    term_idx={}
+    for n,s in skills.items():
+        if n not in byskill: continue
+        L=[l for l in (re.sub(r'\s+',' ',clean(x)) for x in re.split(r'<br\s*/?>',s['eff'])) if l]
+        for i,l in enumerate(L):
+            toks=re.findall(r'「([^」]{2,16})」',l)
+            if not toks or re.match(r'^[（(]?(註|※)',l): continue
+            j=i
+            # 這一行自己沒有動詞時，只有「清單續行」才往上找；中間每一行也都必須是續行
+            while not re.search(VERB,L[j]):
+                if not LIST.match(L[j]) or j==0 or i-j>=5: j=-1;break
+                j-=1
+            if j<0 or re.match(r'^[（(]?(註|※)',L[j]): continue
+            sn=' '.join(L[j:i+1])
+            verb='無視' if '無視' in sn else '解除' if re.search('解除|破除',sn) else '添加' if '添加' in sn else '減免'
+            for tk in toks:
+                for p in re.split(r'[、，及/]',tk):
+                    p=norm(p).replace('痲','麻')
+                    if len(p)>=2: term_idx.setdefault(p,{}).setdefault(n,(verb,sn[:110]))
     cache={}
-    def solve(cat,title):
+    def solve(cat,keys):
         if cat in cache: return
-        if cat in CFG: keys,tip=CFG[cat]
-        elif cat.startswith('減傷抗性'): keys,tip=['指定減傷抗性敵技'],''
-        else:
-            core=norm(re.split(r'[\(（\-–]',title)[0]);keys=[k for k in {norm(cat),core} if len(k)>=2];tip=''
         hits={}
-        for n,s in skills.items():
-            k=next((k for k in keys if '「'+k+'」' in s['n']),None)
-            if not k or n not in byskill: continue
-            sn=snippet(s['eff'],k)
-            verb='無視' if '無視' in sn else '解除' if '解除' in sn else '添加' if '添加' in sn else '減免' if re.search('減少|吸收|不會',sn) else ''
-            if not verb: continue
-            # 每張擁有這個技能的卡都列出（進化前後、不同型態），背包比對才不會漏
-            for cid,slot in byskill[n]:
-                kind='隊長技' if slot=='lskill' else '組合技' if slot=='cskill' else '主動技'
-                prev=hits.get(cid)
-                if not prev or (prev['kind']!='主動技' and kind=='主動技'):
-                    hits[cid]=dict(id=cid,skill=n,kind=kind,verb=verb,cd=s['cd'] if kind=='主動技' else '',text=sn[:90])
+        for k in keys:
+            for n,(verb,sn) in term_idx.get(k,{}).items():
+                # 每張擁有這個技能的卡都列出（進化前後、不同型態），背包比對才不會漏
+                for cid,slot in byskill[n]:
+                    kind='隊長技' if slot=='lskill' else '組合技' if slot=='cskill' else '主動技'
+                    prev=hits.get(cid)
+                    if not prev or (prev['kind']!='主動技' and kind=='主動技'):
+                        hits[cid]=dict(id=cid,skill=n,kind=kind,verb=verb,cd=skills[n]['cd'] if kind=='主動技' else '',text=sn)
         lst=sorted(hits.values(),key=lambda h:(h['verb'] not in('無視','解除'),-rare(h['id']),-h['id']))
+        tip=next((t for pat,t in TIPS if any(re.search(pat,c) for c in cat.split(' ‧ '))),'')
         cache[cat]=dict(tip=tip,total=len({h['skill'] for h in lst}),cards=lst)
 
     events=discover();print('events:',[e['page'] for e in events],flush=True)
@@ -216,10 +243,10 @@ def main():
             for x in r['es']:
                 t=est.get(x)
                 if not t: continue
-                title=clean(t.get('title','')).strip('【】');cat=t.get('content','') or title
+                cat,title,keys=es_keys(t)
                 if not cat: continue
                 if cat not in used: used.append(cat)
-                solve(cat,title);icon=t.get('icon','')
+                solve(cat,keys);icon=t.get('icon','')
                 es.append(dict(id=x,cat=cat,title=title or cat,effect=clean(t.get('effect','')),icon=icon))
                 if icon and ',' not in icon: files[icon]='es_'+icon
             m=mons.get(r['mid'],{})
